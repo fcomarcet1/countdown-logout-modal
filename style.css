@@ -1,0 +1,27 @@
+#my_modal{
+    width: 500px;
+    height: 300px;
+    border: 1px solid #333;
+    box-sizing: border-box;
+    padding: 20px;
+    text-align: center;
+    background: #f1f1f1;
+  
+    /*// making modal center*/
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  
+  
+    /*// hide for the first time */
+  
+    display: none;
+  }
+  #my_modal h2{
+    margin: 0px;
+  }
+  #show_time{
+    font-size: 18px;
+    color: red;
+  }
