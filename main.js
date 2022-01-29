@@ -87,7 +87,7 @@ function requestOnChangeForm() {
 
 
 //TODO: more clean test this
-const logoutCountdown = setInterval(function() {
+const logoutCountdown = setInterval(() => {
     console.log(logoutTimer); 
     if (termsUserLogged) {
         //! Event on change forms
@@ -140,7 +140,7 @@ const logoutCountdown = setInterval(function() {
 var cookieString = getCookies('userSession');
 var termsUserLogged = cookieString.includes('"1";}') && cookieString.includes("userSession");
 
-const InactiveLogoutCountdown = setInterval(function() {
+const InactiveLogoutCountdown = setInterval(() => {
     if (termsUserLogged){
         console.log(logoutTimer);
         $('input, select, textarea').change( () => {
@@ -222,7 +222,7 @@ const InactiveLogoutCountdown = setInterval(function() {
             });*/
         }
 
-        // If there is no interaction with the logout modal when the time is 0 auto logout
+        //no interaction with the logout modal when the time is 0 auto logout
         if (logoutTimer === 0) {
             //! ajax request to logout
             var request = $.post(
