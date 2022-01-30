@@ -1,5 +1,10 @@
 console.log('main.js loaded successfully');
 
+// TODO: DELETE conts in UserController.
+// TODO: DELETE conts in SiteController.
+// TODO: DELETE methods actionCheckLogoutStatus, actionRenewUserSession in UserController
+
+
 var logoutTimer = $('meta[name=logoutTimer]').attr('content');
 var absLogoutTimer = 60;
 var logoutTimer = 60;
@@ -141,8 +146,30 @@ var cookieString = getCookies('userSession');
 var termsUserLogged = cookieString.includes('"1";}') && cookieString.includes("userSession");
 
 const InactiveLogoutCountdown = setInterval(() => {
+    if (!cookieString ){ // check cookie in case the user decides to delete it manually
+        //TODO: ajax request to direct logout
+        var requestdirectLogout = $.post(
+            "/user/check-logout-status",
+            {'directLogout': 'directLogout'},
+            function (data) {
+                console.log(data);
+                if ((data.length >= 1 || jQuery.trim(data) === 'logout')) {
+                    //logoutUser redirect to login page
+                    window.location.href = "/site/loginemail";
+                    window.location.replace("/site/loginemail");
+                }
+            }
+        );
+        // TODO: Delete this console.log
+        requestdirectLogout.done(function (data) { console.log('Jquery post request successfully'); });
+        requestdirectLogout.fail(function (data) { console.log("Jquery post request failed"); });
+
+        clearInterval(logoutCountdown);
+    }
+    // exists cookie
     if (termsUserLogged){
         console.log(logoutTimer);
+        // event on change form
         $('input, select, textarea').change( () => {
             logoutTimer = $('meta[name=logoutTimer]').attr('content');
             const req = $.ajax({
