@@ -23,14 +23,26 @@ class UserLoginController extends Controller
     /**
      * {@inheritdoc}
      */
-    // TODO: add control access.
+    // TODO: preguntar si estan OK los permisos
     public function behaviors()
     {
         return [
+            'access' => [
+                'class' => AccessControl::class,
+                'only' => ['check-logout-status', 'renew-user-session'],
+                'rules' => [
+                    [
+                        'actions' => ['check-logout-status', 'renew-user-session'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
-                    'delete' => ['POST'],
+                    'check-logout-status' => ['POST'],
+                    'renew-user-session' => ['POST'],
                 ],
             ],
         ];
@@ -47,6 +59,7 @@ class UserLoginController extends Controller
         throw new NotFoundHttpException('The requested page does not exist.');
     }
 
+
     /**
      * @throws \JsonException
      * @throws ServerErrorHttpException
@@ -54,93 +67,6 @@ class UserLoginController extends Controller
      * @throws \yii\db\StaleObjectException
      */
     public function actionCheckLogoutStatus()
-    {
-        if (Yii::$app->request->isPost && isset($_POST['logoutTimer'])) {
-
-            if (!Yii::$app->user->isGuest) {
-                $userLoginSession = UserLogin::find()
-                    ->where(['user_id' => Yii::$app->user->identity->id])
-                    ->andWhere(['session_id' => Yii::$app->session->id])
-                    ->orderBy(['logged' => SORT_DESC])
-                    ->one();
-                if (!$userLoginSession) {
-                    throw new NotFoundHttpException(\sprintf('User with id: %s nor found', Yii::$app->user->identity->id));
-                }
-
-                $sessionLogged = $userLoginSession->session_logged;
-                $timeNow = new \DateTime('now', new \DateTimeZone(Yii::$app->params['defaults']['systemTimeZone']));
-                $timeNowUTC = $timeNow->getTimestamp();
-
-                if (($timeNowUTC - $sessionLogged) > (Yii::$app->params['systemTimeout']['authTimeout'])) {
-
-                    $systemLog = new SystemLog();
-                    $systemLog->user_id = Yii::$app->user->identity->id;
-                    $systemLog->instance = Yii::$app->user->identity->instance;
-                    $systemLog->message_short = (Yii::$app->user->identity->first_name ?? '') . ' ' . (Yii::$app->user->identity->last_name ?? '') . ' logged out';
-                    $systemLog->message = (Yii::$app->user->identity->first_name ?? '') . ' ' . (Yii::$app->user->identity->last_name ?? '') . ' logged out for this instance ' . Yii::$app->user->identity->instance . ' from ip: ' . Yii::$app->request->getUserIP();
-                    $dataFormat = [
-                        'event' => 'logout',
-                        'user' => Yii::$app->user->identity->id,
-                        'ip' => Yii::$app->request->getUserIP(),
-                    ];
-                    $systemLog->data_format = json_encode($dataFormat, JSON_THROW_ON_ERROR);
-                    $systemLog->save();
-
-                    // change value for cookies
-                    $cookies = Yii::$app->response->cookies;
-                    $cookies->remove('userSession');
-                    Yii::$app->cache->flush();
-
-                    $userLoginCookie = new Cookie([
-                        'name' => 'userSession',
-                        'value' => '0',
-                        'httpOnly' => false,
-                    ]);
-                    Yii::$app->response->cookies->add($userLoginCookie);
-
-                    Yii::$app->user->logout();
-                    echo (string)'logout';
-                }
-            } else {
-                // user not logged loggout
-                $cookies = Yii::$app->response->cookies;
-                $cookies->remove('userSession');
-                Yii::$app->cache->flush();
-
-                $userLoginCookie = new Cookie([
-                    'name' => 'userSession',
-                    'value' => '0',
-                    'httpOnly' => false,
-                ]);
-
-                Yii::$app->response->cookies->add($userLoginCookie);
-                Yii::$app->user->logout();
-                echo (string)'logout';
-            }
-        }
-        else {
-            $cookies = Yii::$app->response->cookies;
-            $cookies->remove('userSession');
-            Yii::$app->cache->flush();
-
-            $userLoginCookie = new Cookie([
-                'name' => 'userSession',
-                'value' => '0',
-                'httpOnly' => false,
-            ]);
-            Yii::$app->response->cookies->add($userLoginCookie);
-            throw new ServerErrorHttpException('Internal server error', 500);
-        }
-    }
-
-
-    /**
-     * @throws \JsonException
-     * @throws ServerErrorHttpException
-     * @throws NotFoundHttpException
-     * @throws \yii\db\StaleObjectException
-     */
-    public function actionNewChechLogoutStatus()
     {
         // user is not logged or not exists cookie userSession (delete manually)
         if (Yii::$app->user->isGuest || (isset($_POST['directLogout']) && $_POST['directLogout'] === 'directLogout')) {
@@ -237,6 +163,7 @@ class UserLoginController extends Controller
             $timeNowUTC = $timeNow->getTimestamp();
             $sessionTimeout = Yii::$app->params['systemTimeout']['authTimeout'];
 
+            // if session is expired renew it
             if (($timeNowUTC - $userLoginSession->session_logged) > $sessionTimeout) {
                 $userLoginSession->expire = $timeNowUTC + $sessionTimeout;
                 $userLoginSession->save();
@@ -260,5 +187,85 @@ class UserLoginController extends Controller
             }
         }
     }
+
+    /*public function actionCheckLogoutStatus()
+    {
+        if (Yii::$app->request->isPost && isset($_POST['logoutTimer'])) {
+
+            if (!Yii::$app->user->isGuest) {
+                $userLoginSession = UserLogin::find()
+                    ->where(['user_id' => Yii::$app->user->identity->id])
+                    ->andWhere(['session_id' => Yii::$app->session->id])
+                    ->orderBy(['logged' => SORT_DESC])
+                    ->one();
+                if (!$userLoginSession) {
+                    throw new NotFoundHttpException(\sprintf('User with id: %s nor found', Yii::$app->user->identity->id));
+                }
+
+                $sessionLogged = $userLoginSession->session_logged;
+                $timeNow = new \DateTime('now', new \DateTimeZone(Yii::$app->params['defaults']['systemTimeZone']));
+                $timeNowUTC = $timeNow->getTimestamp();
+
+                if (($timeNowUTC - $sessionLogged) > (Yii::$app->params['systemTimeout']['authTimeout'])) {
+
+                    $systemLog = new SystemLog();
+                    $systemLog->user_id = Yii::$app->user->identity->id;
+                    $systemLog->instance = Yii::$app->user->identity->instance;
+                    $systemLog->message_short = (Yii::$app->user->identity->first_name ?? '') . ' ' . (Yii::$app->user->identity->last_name ?? '') . ' logged out';
+                    $systemLog->message = (Yii::$app->user->identity->first_name ?? '') . ' ' . (Yii::$app->user->identity->last_name ?? '') . ' logged out for this instance ' . Yii::$app->user->identity->instance . ' from ip: ' . Yii::$app->request->getUserIP();
+                    $dataFormat = [
+                        'event' => 'logout',
+                        'user' => Yii::$app->user->identity->id,
+                        'ip' => Yii::$app->request->getUserIP(),
+                    ];
+                    $systemLog->data_format = json_encode($dataFormat, JSON_THROW_ON_ERROR);
+                    $systemLog->save();
+
+                    // change value for cookies
+                    $cookies = Yii::$app->response->cookies;
+                    $cookies->remove('userSession');
+                    Yii::$app->cache->flush();
+
+                    $userLoginCookie = new Cookie([
+                        'name' => 'userSession',
+                        'value' => '0',
+                        'httpOnly' => false,
+                    ]);
+                    Yii::$app->response->cookies->add($userLoginCookie);
+
+                    Yii::$app->user->logout();
+                    echo (string)'logout';
+                }
+            } else {
+                // user not logged loggout
+                $cookies = Yii::$app->response->cookies;
+                $cookies->remove('userSession');
+                Yii::$app->cache->flush();
+
+                $userLoginCookie = new Cookie([
+                    'name' => 'userSession',
+                    'value' => '0',
+                    'httpOnly' => false,
+                ]);
+
+                Yii::$app->response->cookies->add($userLoginCookie);
+                Yii::$app->user->logout();
+                echo (string)'logout';
+            }
+        }
+        else {
+            $cookies = Yii::$app->response->cookies;
+            $cookies->remove('userSession');
+            Yii::$app->cache->flush();
+
+            $userLoginCookie = new Cookie([
+                'name' => 'userSession',
+                'value' => '0',
+                'httpOnly' => false,
+            ]);
+            Yii::$app->response->cookies->add($userLoginCookie);
+            throw new ServerErrorHttpException('Internal server error', 500);
+        }
+    }*/
 }
 
