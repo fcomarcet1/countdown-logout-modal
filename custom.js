@@ -176,7 +176,7 @@ const InactiveLogoutCountdown = setInterval(() => {
         //TODO: ajax request to direct logout
         // request to logout
         var requestdirectLogout = $.post(
-            "/user/check-logout-status",
+            "/user-login/check-logout-status",
             {'directLogout': 'directLogout'},
             function (data) {
                 console.log(data);
@@ -201,7 +201,7 @@ const InactiveLogoutCountdown = setInterval(() => {
             logoutTimer = $('meta[name=logoutTimer]').attr('content');
             const req = $.ajax({
                 type: 'POST',
-                url: '/user/renew-user-session',
+                url: '/user-login/renew-user-session',
                 data: {'RenewlogoutTimer': 'RenewlogoutTimer'},
                 success: function (response) {
                     var jsonData = JSON.parse(response);
@@ -227,7 +227,7 @@ const InactiveLogoutCountdown = setInterval(() => {
                 //! ajax request to renew session
                 const reqRenewSession = $.ajax({
                     type: 'POST',
-                    url: '/user/renew-user-session',
+                    url: '/user-login/renew-user-session',
                     data: {'RenewlogoutTimer': 'RenewlogoutTimer'},
                     success: function (response) {
                         var jsonData = JSON.parse(response);
@@ -248,7 +248,7 @@ const InactiveLogoutCountdown = setInterval(() => {
                 console.log('logout-button');
                 //TODO: request to logout
                 var request = $.post(
-                    "/user/check-logout-status",
+                    "/user-login/check-logout-status",
                     {'logoutTimer': 'logoutTimer'},
                     function (data) {
                         console.log(data);
@@ -277,7 +277,7 @@ const InactiveLogoutCountdown = setInterval(() => {
         if (logoutTimer === 0) {
             //! ajax request to logout
             var request = $.post(
-                "/user/check-logout-status",
+                "/user-login/check-logout-status",
                 {'logoutTimer': 'logoutTimer'},
                 function (data) {
                     console.log(data);
