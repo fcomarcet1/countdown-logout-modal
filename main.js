@@ -164,7 +164,7 @@ const InactiveLogoutCountdown = setInterval(() => {
         requestdirectLogout.done(function (data) { console.log('Jquery post request successfully'); });
         requestdirectLogout.fail(function (data) { console.log("Jquery post request failed"); });
 
-        clearInterval(logoutCountdown);
+        clearInterval(InactiveLogoutCountdown);
     }
     // exists cookie
     if (termsUserLogged){
@@ -239,7 +239,7 @@ const InactiveLogoutCountdown = setInterval(() => {
                 request.done(function () { console.log('Jquery post request successfully'); });
                 request.fail(function () { console.log("Jquery post request failed"); });
 
-                clearInterval(logoutCountdown);
+                clearInterval(InactiveLogoutCountdown);
                 //! close modal???
                 closeModal();
             });
@@ -270,7 +270,7 @@ const InactiveLogoutCountdown = setInterval(() => {
             request.done(function (data) { console.log('Jquery post request successfully'); });
             request.fail(function (data) { console.log("Jquery post request failed"); });
 
-            clearInterval(logoutCountdown);
+            clearInterval(InactiveLogoutCountdown);
         }
 
     }
